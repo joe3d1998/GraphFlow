@@ -87,7 +87,7 @@ shuffle: True # Whether to shuffle the examples during training
 batch_size: 1 # No. of dialogs per batch
 grad_accumulated_steps: 1
 test_batch_size: 1
-max_epochs: 30
+max_epochs: 1
 patience: 10
 verbose: 1000 # Print every X batches
 max_answer_len: 12 # Set max answer length for decoding
