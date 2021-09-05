@@ -247,6 +247,9 @@ class CoQAModel(Model):
             loss = loss / self.config['grad_accumulated_steps'] # Normalize our loss (if averaged)
             # Run backward
             loss.backward()
+            
+            if step % 2 == 0:
+                print('step {} loss {}'.format(step,loss))
 
             if (step + 1) % self.config['grad_accumulated_steps'] == 0: # Wait for several backward steps
                 if self.config['optimizer'] != 'bert_adam' and self.config['grad_clipping']:
