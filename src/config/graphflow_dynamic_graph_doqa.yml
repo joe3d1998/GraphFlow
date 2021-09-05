@@ -88,7 +88,7 @@ random_seed: 1234
 shuffle: True # Whether to shuffle the examples during training
 batch_size: 1 # No. of dialogs per batch, 1!
 grad_accumulated_steps: 1
-max_epochs: 30
+max_epochs: 1
 patience: 10
 verbose: 1000 # Print every X batches
 unk_answer_threshold: 0.2 # 0.2!
