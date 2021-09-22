@@ -233,7 +233,8 @@ class ModelHandler(object):
             loss = res['loss']
             metrics = res['metrics']
             self._update_metrics(loss, metrics, res['total_qs'], res['total_dials'], training=training)
-
+            if step % 10 == 0:
+                print('step {} | loss {}'.format(step,loss))
             if training:
                 self._n_train_examples += x_batch['batch_size']
 
