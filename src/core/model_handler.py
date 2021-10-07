@@ -227,46 +227,54 @@ class ModelHandler(object):
             x_batch = vectorize_input(input_batch, self.config, self.bert_model, training=training, device=self.device)
             if not x_batch:
                 continue  # When there are no target spans present in the batch
+            
+            run_batch = False
+            while not run_batch:
+                try:
+                    res = self.model.predict(x_batch, step, update=training, out_predictions=out_predictions)
 
-            res = self.model.predict(x_batch, step, update=training, out_predictions=out_predictions)
+                    loss = res['loss']
+                    metrics = res['metrics']
+                    self._update_metrics(loss, metrics, res['total_qs'], res['total_dials'], training=training)
 
-            loss = res['loss']
-            metrics = res['metrics']
-            self._update_metrics(loss, metrics, res['total_qs'], res['total_dials'], training=training)
+                    if training:
+                        self._n_train_examples += x_batch['batch_size']
 
-            if training:
-                self._n_train_examples += x_batch['batch_size']
+                    if (verbose > 0) and (step > 0) and (step % verbose == 0):
+                        mode = "train" if training else ("test" if self.is_test else "dev")
+                        summary_str = self.self_report(step, mode)
+                        self.logger.write_to_file(summary_str)
+                        print(summary_str)
+                        print('used_time: {:0.2f}s'.format(time.time() - start_time))
 
-            if (verbose > 0) and (step > 0) and (step % verbose == 0):
-                mode = "train" if training else ("test" if self.is_test else "dev")
-                summary_str = self.self_report(step, mode)
-                self.logger.write_to_file(summary_str)
-                print(summary_str)
-                print('used_time: {:0.2f}s'.format(time.time() - start_time))
+                    if out_predictions:
+                        if self.config['dataset_name'] == 'coqa':
+                            for idx, (id, turn_ids) in enumerate(zip(input_batch['id'], input_batch['turn_ids'])):
+                                for t_idx, t_id in enumerate(turn_ids):
+                                    output.append({'id': id,
+                                                   'turn_id': t_id,
+                                                   'answer': res['predictions'][idx][t_idx]})
+                        else:
+                            for idx, turn_ids in enumerate(input_batch['turn_ids']):
+                                qid_list = []
+                                best_span_str_list = []
+                                yesno_list = []
+                                followup_list = []
+                                for t_idx, t_id in enumerate(turn_ids):
+                                    qid_list.append(t_id)
+                                    best_span_str_list.append(res['predictions'][idx][t_idx])
+                                    yesno_list.append(res['yesnos'][idx][t_idx])
+                                    followup_list.append(res['followups'][idx][t_idx])
 
-            if out_predictions:
-                if self.config['dataset_name'] == 'coqa':
-                    for idx, (id, turn_ids) in enumerate(zip(input_batch['id'], input_batch['turn_ids'])):
-                        for t_idx, t_id in enumerate(turn_ids):
-                            output.append({'id': id,
-                                           'turn_id': t_id,
-                                           'answer': res['predictions'][idx][t_idx]})
-                else:
-                    for idx, turn_ids in enumerate(input_batch['turn_ids']):
-                        qid_list = []
-                        best_span_str_list = []
-                        yesno_list = []
-                        followup_list = []
-                        for t_idx, t_id in enumerate(turn_ids):
-                            qid_list.append(t_id)
-                            best_span_str_list.append(res['predictions'][idx][t_idx])
-                            yesno_list.append(res['yesnos'][idx][t_idx])
-                            followup_list.append(res['followups'][idx][t_idx])
-
-                        output.append({'qid': qid_list,
-                                       'best_span_str': best_span_str_list,
-                                       'yesno': yesno_list,
-                                       'followup': followup_list})
+                                output.append({'qid': qid_list,
+                                               'best_span_str': best_span_str_list,
+                                               'yesno': yesno_list,
+                                               'followup': followup_list})
+                                
+                    run_batch = True
+                except:
+                    pass
+                    
         return output
 
     def self_report(self, step, mode='train'):
