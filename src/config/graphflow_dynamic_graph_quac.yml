@@ -38,7 +38,7 @@ use_ques_marker: True
 ques_marker_embed_dim: 3
 ques_turn_marker_embed_dim: 5
 
-hidden_size: 300
+hidden_size: 200
 word_dropout: 0.3
 bert_dropout: 0.4
 rnn_dropout: 0.3
