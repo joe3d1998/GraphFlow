@@ -222,7 +222,6 @@ class ModelHandler(object):
             self.model.optimizer.zero_grad()
         output = []
         for step, input_batch in enumerate(data_loader):
-            torch.cuda.empty_cache()
             input_batch = sanitize_input(input_batch, self.config, self.model.word_dict,
                                          self.model.feature_dict, self.bert_tokenizer, training=training)
             x_batch = vectorize_input(input_batch, self.config, self.bert_model, training=training, device=self.device)
@@ -230,7 +229,7 @@ class ModelHandler(object):
                 continue  # When there are no target spans present in the batch
             
             batch_finished = False
-            
+            torch.cuda.empty_cache()
             while not batch_finished:
                 try:
                     res = self.model.predict(x_batch, step, update=training, out_predictions=out_predictions)
